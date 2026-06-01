@@ -163,7 +163,7 @@ const App = (() => {
         // Re-init form components
         UI.renderMoodSelector('mood-selector');
         UI.renderStarRating('nutrition-rating');
-        UI.setupEnergySlider('record-energy', 'energy-value');
+        UI.renderEnergySelector('energy-selector');
         UI.setupSleepCalculation('record-sleep-start', 'record-sleep-end', 'sleep-duration');
 
         // Set date to today
