@@ -223,32 +223,32 @@ const UI = (() => {
         });
     };
 
-    /* ─── Setup Energy Slider ─── */
-    const setupEnergySlider = (sliderId, displayId) => {
-        const slider = document.getElementById(sliderId);
-        const display = document.getElementById(displayId);
-        if (!slider) return;
+    /* ─── Render Energy Selector ─── */
+    const ENERGY_LEVELS = [
+        { value: 1, label: 'Виснажений' },
+        { value: 2, label: 'Втомлений' },
+        { value: 3, label: 'Нормально' },
+        { value: 4, label: 'Бадьорий' },
+        { value: 5, label: 'Енергійний' }
+    ];
 
-        const updateDisplay = () => {
-            const val = parseInt(slider.value);
-            if (display) {
-                display.textContent = `${val}/5 — ${ENERGY_LABELS[val - 1]}`;
-            }
-            // Update slider track color
-            const percent = ((val - 1) / 4) * 100;
-            slider.style.background = `linear-gradient(to right, var(--accent-purple) 0%, var(--accent-cyan) ${percent}%, rgba(255,255,255,0.1) ${percent}%)`;
+    const renderEnergySelector = (containerId) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-            // Update labels
-            const labelsContainer = slider.closest('.form-group')?.querySelector('.energy-labels');
-            if (labelsContainer) {
-                labelsContainer.querySelectorAll('.energy-label').forEach((label, idx) => {
-                    label.classList.toggle('active', idx === val - 1);
-                });
-            }
-        };
+        container.innerHTML = ENERGY_LEVELS.map(level => `
+            <button type="button" class="energy-btn${level.value === 3 ? ' selected' : ''}" data-value="${level.value}">
+                <span class="energy-num">${level.value}</span>
+                <span class="energy-text">${level.label}</span>
+            </button>
+        `).join('');
 
-        slider.addEventListener('input', updateDisplay);
-        updateDisplay();
+        container.querySelectorAll('.energy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.energy-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
     };
 
     /* ─── Setup Sleep Duration Auto-calc ─── */
@@ -291,7 +291,8 @@ const UI = (() => {
         const moodBtn = document.querySelector('#mood-selector .mood-btn.selected');
         const mood = moodBtn ? parseInt(moodBtn.dataset.value) : null;
 
-        const energy = parseInt(document.getElementById('record-energy')?.value) || 3;
+        const energyBtn = document.querySelector('#energy-selector .energy-btn.selected');
+        const energy = energyBtn ? parseInt(energyBtn.dataset.value) : 3;
 
         const sleepStart = document.getElementById('record-sleep-start')?.value || '';
         const sleepEnd = document.getElementById('record-sleep-end')?.value || '';
@@ -350,11 +351,9 @@ const UI = (() => {
             document.querySelectorAll('#mood-selector .mood-btn').forEach(b => b.classList.remove('selected'));
 
             // Reset energy
-            const energySlider = document.getElementById('record-energy');
-            if (energySlider) {
-                energySlider.value = 3;
-                energySlider.dispatchEvent(new Event('input'));
-            }
+            document.querySelectorAll('#energy-selector .energy-btn').forEach((btn, idx) => {
+                btn.classList.toggle('selected', idx === 2); // default to 3 (index 2)
+            });
 
             // Reset sleep
             const sleepStart = document.getElementById('record-sleep-start');
@@ -502,7 +501,7 @@ const UI = (() => {
         renderDashboardTabs,
         renderMoodSelector,
         renderStarRating,
-        setupEnergySlider,
+        renderEnergySelector,
         setupSleepCalculation,
         getRecordFormData,
         resetRecordForm,

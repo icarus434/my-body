@@ -110,7 +110,7 @@ const App = (() => {
         UI.renderProfileSelector('record-profile');
         UI.renderMoodSelector('mood-selector');
         UI.renderStarRating('nutrition-rating');
-        UI.setupEnergySlider('record-energy', 'energy-value');
+        UI.renderEnergySelector('energy-selector');
         UI.setupSleepCalculation('record-sleep-start', 'record-sleep-end', 'sleep-duration');
 
         // Set default date
