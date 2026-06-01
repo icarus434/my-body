@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="My Body — персональний трекер здоров'я. Відстежуйте вагу, настрій, сон, тренування та харчування.">
+    <meta name="theme-color" content="#000000">
+    <title>My Body — Трекер здоров'я</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="app">
+    <header class="app-header">
+        <div class="header-logo">
+            <div class="logo-icon">M</div>
+            <span class="logo-text">My Body</span>
+        </div>
+
+        <nav class="header-nav">
+            <button class="nav-btn active" id="nav-home">Головна</button>
+            <button class="nav-btn" id="nav-dashboard">Дашборд</button>
+        </nav>
+
+        <div class="header-actions">
+            <button class="action-btn" id="btn-export" title="Експорт даних">
+                <span class="icon">↓</span>
+                <span>Експорт</span>
+            </button>
+            <button class="action-btn" id="btn-import" title="Імпорт даних">
+                <span class="icon">↑</span>
+                <span>Імпорт</span>
+            </button>
+            <input type="file" id="file-import" accept=".json">
+        </div>
+    </header>
+
+    <main>
+        <!-- Home -->
+        <section id="view-home" class="view active">
+            <div class="home-header">
+                <h1 class="home-title">My Body</h1>
+                <p class="home-subtitle">Щоденний трекер здоров'я та самопочуття</p>
+            </div>
+
+            <div class="profiles-grid" id="profiles-grid"></div>
+
+            <div class="add-profile-section">
+                <button class="btn-add-profile" id="btn-add-profile">
+                    <span>+</span>
+                    <span>Додати профіль</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Dashboard -->
+        <section id="view-dashboard" class="view">
+            <h2 class="dashboard-title">Дашборд</h2>
+
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label class="filter-label">Від:</label>
+                    <input type="date" class="filter-input" id="filter-date-from">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">До:</label>
+                    <input type="date" class="filter-input" id="filter-date-to">
+                </div>
+                <button class="btn btn-primary btn-sm" id="btn-filter">Показати</button>
+            </div>
+
+            <div class="profile-tabs" id="profile-tabs"></div>
+            <div class="stats-summary" id="stats-summary"></div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span class="chart-icon" style="background: var(--blue)"></span> Вага
+                    </div>
+                    <div class="chart-container"><canvas id="chart-weight"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span class="chart-icon" style="background: var(--pink)"></span> Настрій та Енергія
+                    </div>
+                    <div class="chart-container"><canvas id="chart-mood-energy"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span class="chart-icon" style="background: var(--green)"></span> Сон
+                    </div>
+                    <div class="chart-container"><canvas id="chart-sleep"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span class="chart-icon" style="background: var(--orange)"></span> Тренування
+                    </div>
+                    <div class="chart-container"><canvas id="chart-training"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span class="chart-icon" style="background: var(--teal)"></span> Вода
+                    </div>
+                    <div class="chart-container"><canvas id="chart-water"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span class="chart-icon" style="background: var(--yellow)"></span> Якість харчування
+                    </div>
+                    <div class="chart-container"><canvas id="chart-nutrition"></canvas></div>
+                </div>
+            </div>
+
+            <div id="history-section" class="history-section"></div>
+        </section>
+    </main>
+</div>
+
+<!-- Record Modal -->
+<div class="modal" id="modal-record">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Зафіксувати дані</h2>
+            <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body" id="record-form">
+            <div class="form-group">
+                <label class="form-label">Профіль</label>
+                <select class="form-select" id="record-profile"></select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Дата</label>
+                <input type="date" class="form-input" id="record-date">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Вага (кг)</label>
+                <input type="number" class="form-input" id="record-weight"
+                       placeholder="Наприклад: 75.5" step="0.1" min="20" max="300">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Тренування</label>
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="record-training">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label" id="training-label">Ні</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Настрій</label>
+                <div class="mood-selector" id="mood-selector"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Рівень енергії</label>
+                <input type="range" class="energy-slider" id="record-energy"
+                       min="1" max="5" value="3" step="1">
+                <div class="energy-labels">
+                    <span class="energy-label">Виснажений</span>
+                    <span class="energy-label">Втомлений</span>
+                    <span class="energy-label active">Нормально</span>
+                    <span class="energy-label">Бадьорий</span>
+                    <span class="energy-label">Енергійний</span>
+                </div>
+                <div class="energy-value-display" id="energy-value">3/5 — Нормально</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Час сну</label>
+                <div class="form-row">
+                    <div>
+                        <label class="form-label" style="font-size: 0.7rem; opacity: 0.5;">Ліг спати</label>
+                        <input type="time" class="form-input" id="record-sleep-start">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.7rem; opacity: 0.5;">Прокинувся</label>
+                        <input type="time" class="form-input" id="record-sleep-end">
+                    </div>
+                </div>
+                <div class="sleep-duration-display" id="sleep-duration" style="margin-top: 10px;">
+                    <span class="sleep-duration-label">Вкажіть час сну</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Спожито води (літрів)</label>
+                <input type="number" class="form-input" id="record-water"
+                       placeholder="Наприклад: 2.0" step="0.1" min="0" max="10">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Якість харчування</label>
+                <div class="star-rating" id="nutrition-rating"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary btn-lg btn-full" id="btn-save-record">
+                Внести дані
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal" id="modal-profile">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-content-sm">
+        <div class="modal-header">
+            <h2 class="modal-title">Новий профіль</h2>
+            <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Ім'я</label>
+                <input type="text" class="form-input" id="new-profile-name"
+                       placeholder="Введіть ім'я" maxlength="30" autocomplete="off">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary btn-full" id="btn-save-profile">Створити</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
