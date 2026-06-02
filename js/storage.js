@@ -78,10 +78,21 @@ const Storage = (() => {
                     result.entries[profile] = profileEntries;
                 } else if (typeof profileEntries === 'object') {
                     // Convert {date: data} object to array
-                    result.entries[profile] = Object.keys(profileEntries).map(date => ({
-                        date,
-                        ...profileEntries[date]
-                    }));
+                    result.entries[profile] = Object.keys(profileEntries).map(date => {
+                        const entry = profileEntries[date];
+                        return {
+                            date,
+                            weight: parseFloat(entry.weight) || 0,
+                            training: !!entry.training,
+                            mood: parseInt(entry.mood) || 0,
+                            energy: parseInt(entry.energy) || 3,
+                            sleepStart: entry.sleepStart || '',
+                            sleepEnd: entry.sleepEnd || '',
+                            sleepHours: parseFloat(entry.sleepHours) || 0,
+                            water: parseFloat(entry.water) || 0,
+                            nutrition: parseInt(entry.nutrition) || 0
+                        };
+                    });
                 }
 
                 // Sort newest first
@@ -174,6 +185,15 @@ const Storage = (() => {
             data.entries[profile] = [];
         }
 
+        // Sanitize numeric fields to prevent undefined/NaN in Firebase
+        entry.weight = parseFloat(entry.weight) || 0;
+        entry.mood = parseInt(entry.mood) || 0;
+        entry.energy = parseInt(entry.energy) || 3;
+        entry.sleepHours = parseFloat(entry.sleepHours) || 0;
+        entry.water = parseFloat(entry.water) || 0;
+        entry.nutrition = parseInt(entry.nutrition) || 0;
+        entry.training = !!entry.training;
+
         // Update local cache
         const existingIdx = data.entries[profile].findIndex(e => e.date === entry.date);
         if (existingIdx !== -1) {
@@ -207,6 +227,12 @@ const Storage = (() => {
         const entries = data.entries[profile] || [];
         if (entries.length === 0) return null;
         return entries[0]; // Already sorted newest first
+    };
+
+    const getTodayEntry = (profile) => {
+        const today = new Date().toISOString().slice(0, 10);
+        const entries = data.entries[profile] || [];
+        return entries.find(e => e.date === today) || null;
     };
 
     const deleteEntry = (profile, date) => {
@@ -316,6 +342,7 @@ const Storage = (() => {
         saveEntry,
         getEntries,
         getLastEntry,
+        getTodayEntry,
         deleteEntry,
         exportData,
         importData,

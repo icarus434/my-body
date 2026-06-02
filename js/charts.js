@@ -210,7 +210,7 @@ const Charts = (() => {
         });
     };
 
-    /* ─── Sleep Chart ─── */
+    /* ─── Sleep Chart (line) ─── */
     const renderSleepChart = (canvasId, entries) => {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -223,31 +223,38 @@ const Charts = (() => {
             return;
         }
 
-        // Color bars based on sleep duration
-        const barColors = entries.map(e => {
-            if (e.sleepHours >= 7) return COLORS.green.border;
-            if (e.sleepHours >= 5) return COLORS.yellow.border;
-            return COLORS.red.border;
-        });
+        const hasSleepData = entries.some(e => (e.sleepHours || 0) > 0);
+        if (!hasSleepData) {
+            showEmptyState(canvas);
+            return;
+        }
 
-        const barBgColors = entries.map(e => {
-            if (e.sleepHours >= 7) return COLORS.green.light;
-            if (e.sleepHours >= 5) return COLORS.yellow.light;
-            return COLORS.red.light;
+        const gradient = createGradient(ctx, 'rgba(48, 209, 88, 0.35)', 'rgba(48, 209, 88, 0.02)');
+
+        // Color points based on sleep duration
+        const pointColors = entries.map(e => {
+            if (e.sleepHours >= 7) return COLORS.green.main;
+            if (e.sleepHours >= 5) return COLORS.yellow.main;
+            return COLORS.red.main;
         });
 
         chartInstances[canvasId] = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels: formatDateLabels(entries),
                 datasets: [{
                     label: 'Сон (годин)',
                     data: entries.map(e => e.sleepHours || 0),
-                    backgroundColor: barBgColors,
-                    borderColor: barColors,
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    borderSkipped: false,
+                    borderColor: COLORS.green.border,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: pointColors,
+                    pointBorderColor: '#1c1c1e',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    borderWidth: 2.5,
                 }]
             },
             options: {
@@ -330,7 +337,7 @@ const Charts = (() => {
         });
     };
 
-    /* ─── Water Chart ─── */
+    /* ─── Water Chart (line) ─── */
     const renderWaterChart = (canvasId, entries) => {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -343,21 +350,32 @@ const Charts = (() => {
             return;
         }
 
-        const gradient = createGradient(ctx, 'rgba(100, 210, 255, 0.3)', 'rgba(100, 210, 255, 0.02)');
+        const hasWaterData = entries.some(e => (e.water || 0) > 0);
+        if (!hasWaterData) {
+            showEmptyState(canvas);
+            return;
+        }
+
+        const gradient = createGradient(ctx, 'rgba(100, 210, 255, 0.35)', 'rgba(100, 210, 255, 0.02)');
 
         chartInstances[canvasId] = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels: formatDateLabels(entries),
                 datasets: [
                     {
                         label: 'Вода (л)',
                         data: entries.map(e => e.water || 0),
-                        backgroundColor: 'rgba(6, 182, 212, 0.3)',
                         borderColor: COLORS.cyan.border,
-                        borderWidth: 2,
-                        borderRadius: 6,
-                        borderSkipped: false,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: COLORS.cyan.main,
+                        pointBorderColor: '#1c1c1e',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        borderWidth: 2.5,
                     }
                 ]
             },
@@ -370,8 +388,7 @@ const Charts = (() => {
                         callbacks: {
                             label: (ctx) => `${ctx.parsed.y} л`
                         }
-                    },
-                    annotation: undefined // Will add goal line if plugin available
+                    }
                 },
                 scales: {
                     y: {
@@ -453,6 +470,17 @@ const Charts = (() => {
         renderTrainingChart('chart-training', entries);
         renderWaterChart('chart-water', entries);
         renderNutritionChart('chart-nutrition', entries);
+
+        // Fix Chart.js canvas sizing: when dashboard view transitions from
+        // display:none → block, canvas may have stale dimensions.
+        // Force resize after layout is settled.
+        requestAnimationFrame(() => {
+            Object.values(chartInstances).forEach(chart => {
+                if (chart && typeof chart.resize === 'function') {
+                    chart.resize();
+                }
+            });
+        });
     };
 
     /* ─── Comparison Charts ─── */

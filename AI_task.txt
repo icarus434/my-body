@@ -1,0 +1,159 @@
+app.js?v=3:60 🏋️ My Body Health Tracker — Ініціалізовано! (Firebase sync active)
+storage.js?v=3:119 🔥 FIREBASE RAW DATA: {
+  "Богдан": {
+    "2026-06-01": {
+      "energy": 3,
+      "mood": 4,
+      "nutrition": 5,
+      "sleepEnd": "09:50",
+      "sleepHours": 8.3,
+      "sleepStart": "01:32",
+      "training": false,
+      "water": 1.2,
+      "weight": 85
+    },
+    "2026-06-02": {
+      "energy": 4,
+      "mood": 4,
+      "nutrition": 5,
+      "sleepEnd": "08:52",
+      "sleepHours": 8.6,
+      "sleepStart": "00:16",
+      "training": false,
+      "water": 1,
+      "weight": 85
+    }
+  },
+  "Ліза": {
+    "2026-06-01": {
+      "energy": 2,
+      "mood": 3,
+      "nutrition": 0,
+      "sleepEnd": "09:30",
+      "sleepHours": 8,
+      "sleepStart": "01:30",
+      "training": false,
+      "water": 0.5,
+      "weight": 70
+    },
+    "2026-06-02": {
+      "energy": 3,
+      "mood": 3,
+      "nutrition": 4,
+      "sleepEnd": "08:50",
+      "sleepHours": 8.7,
+      "sleepStart": "00:11",
+      "training": false,
+      "water": 0.5,
+      "weight": 70
+    }
+  }
+}
+(anonymous) @ storage.js?v=3:119
+(anonymous) @ Reference.ts:246
+onValue @ EventRegistration.ts:58
+(anonymous) @ Reference_impl.ts:857
+(anonymous) @ util.ts:540
+(anonymous) @ EventQueue.ts:160
+(anonymous) @ EventQueue.ts:128
+eventQueueRaiseEventsForChangedPath @ EventQueue.ts:108
+repoOnDataUpdate @ Repo.ts:409
+(anonymous) @ Repo.ts:259
+onDataPush_ @ PersistentConnection.ts:663
+onDataMessage_ @ PersistentConnection.ts:656
+onDataMessage_ @ Connection.ts:321
+onPrimaryMessageReceived_ @ Connection.ts:313
+(anonymous) @ Connection.ts:210
+appendFrame_ @ WebSocketConnection.ts:300
+handleIncomingFrame @ WebSocketConnection.ts:352
+(anonymous) @ WebSocketConnection.ts:222
+storage.js?v=3:122 🔥 CONVERTED DATA entries: {
+  "Богдан": [
+    {
+      "date": "2026-06-02",
+      "weight": 85,
+      "training": false,
+      "mood": 4,
+      "energy": 4,
+      "sleepStart": "00:16",
+      "sleepEnd": "08:52",
+      "sleepHours": 8.6,
+      "water": 1,
+      "nutrition": 5
+    },
+    {
+      "date": "2026-06-01",
+      "weight": 85,
+      "training": false,
+      "mood": 4,
+      "energy": 3,
+      "sleepStart": "01:32",
+      "sleepEnd": "09:50",
+      "sleepHours": 8.3,
+      "water": 1.2,
+      "nutrition": 5
+    }
+  ],
+  "Ліза": [
+    {
+      "date": "2026-06-02",
+      "weight": 70,
+      "training": false,
+      "mood": 3,
+      "energy": 3,
+      "sleepStart": "00:11",
+      "sleepEnd": "08:50",
+      "sleepHours": 8.7,
+      "water": 0.5,
+      "nutrition": 4
+    },
+    {
+      "date": "2026-06-01",
+      "weight": 70,
+      "training": false,
+      "mood": 3,
+      "energy": 2,
+      "sleepStart": "01:30",
+      "sleepEnd": "09:30",
+      "sleepHours": 8,
+      "water": 0.5,
+      "nutrition": 0
+    }
+  ]
+}
+(anonymous) @ storage.js?v=3:122
+(anonymous) @ Reference.ts:246
+onValue @ EventRegistration.ts:58
+(anonymous) @ Reference_impl.ts:857
+(anonymous) @ util.ts:540
+(anonymous) @ EventQueue.ts:160
+(anonymous) @ EventQueue.ts:128
+eventQueueRaiseEventsForChangedPath @ EventQueue.ts:108
+repoOnDataUpdate @ Repo.ts:409
+(anonymous) @ Repo.ts:259
+onDataPush_ @ PersistentConnection.ts:663
+onDataMessage_ @ PersistentConnection.ts:656
+onDataMessage_ @ Connection.ts:321
+onPrimaryMessageReceived_ @ Connection.ts:313
+(anonymous) @ Connection.ts:210
+appendFrame_ @ WebSocketConnection.ts:300
+handleIncomingFrame @ WebSocketConnection.ts:352
+(anonymous) @ WebSocketConnection.ts:222
+app.js?v=3:451 📊 Dashboard entries for Богдан :
+app.js?v=3:453   2026-06-01: sleepHours=8.3, water=1.2, sleepStart=01:32, sleepEnd=09:50
+app.js?v=3:453   2026-06-02: sleepHours=8.6, water=1, sleepStart=00:16, sleepEnd=08:52
+app.js?v=3:455   Raw entry objects: (2) [{…}, {…}]
+charts.js?v=3:228 💤 SLEEP CHART DATA: (2) [8.3, 8.6] raw entries: (2) [{…}, {…}]
+renderSleepChart @ charts.js?v=3:228
+renderAllCharts @ charts.js?v=3:472
+refreshDashboard @ app.js?v=3:458
+initDashboard @ app.js?v=3:428
+navigateTo @ app.js?v=3:97
+(anonymous) @ app.js?v=3:72
+charts.js?v=3:358 💧 WATER CHART DATA: (2) [1.2, 1] raw entries: (2) [{…}, {…}]
+renderWaterChart @ charts.js?v=3:358
+renderAllCharts @ charts.js?v=3:474
+refreshDashboard @ app.js?v=3:458
+initDashboard @ app.js?v=3:428
+navigateTo @ app.js?v=3:97
+(anonymous) @ app.js?v=3:72

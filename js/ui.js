@@ -15,25 +15,33 @@ const UI = (() => {
     const ENERGY_LABELS = ['Виснажений', 'Втомлений', 'Нормально', 'Бадьорий', 'Енергійний'];
 
     /* ─── Modal Management ─── */
+    let scrollPosition = 0;
+
     const showModal = (modalId) => {
         const modal = document.getElementById(modalId);
         if (!modal) return;
+        scrollPosition = window.pageYOffset;
         modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+        document.body.style.top = `-${scrollPosition}px`;
     };
 
     const hideModal = (modalId) => {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.remove('active');
-        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollPosition);
     };
 
     const hideAllModals = () => {
         document.querySelectorAll('.modal.active').forEach(modal => {
             modal.classList.remove('active');
         });
-        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollPosition);
     };
 
     /* ─── Toast Notifications ─── */
@@ -65,10 +73,15 @@ const UI = (() => {
         if (!container) return;
 
         const profiles = Storage.getProfiles();
+        const today = new Date().toISOString().slice(0, 10);
+        const todayFormatted = new Date().toLocaleDateString('uk-UA', {
+            day: 'numeric', month: 'long'
+        });
         container.innerHTML = '';
 
         profiles.forEach((profile, index) => {
             const lastEntry = Storage.getLastEntry(profile);
+            const todayEntry = Storage.getTodayEntry(profile);
             const entryCount = Storage.getEntryCount(profile);
             const initial = profile.charAt(0).toUpperCase();
 
@@ -112,6 +125,41 @@ const UI = (() => {
                 lastUpdateHTML = '';
             }
 
+            // Today's quick-action button
+            let todayButtonHTML = '';
+            if (todayEntry) {
+                const moodData = MOODS.find(m => m.value === todayEntry.mood);
+                const moodEmoji = moodData ? moodData.emoji : '';
+                todayButtonHTML = `
+                    <div class="today-section">
+                        <div class="today-summary">
+                            <span class="today-label">📋 Сьогодні (${todayFormatted})</span>
+                            <div class="today-pills">
+                                ${todayEntry.weight ? `<span class="today-pill">⚖️ ${todayEntry.weight}</span>` : ''}
+                                ${moodEmoji ? `<span class="today-pill">${moodEmoji}</span>` : ''}
+                                ${todayEntry.sleepHours ? `<span class="today-pill">😴 ${todayEntry.sleepHours}г</span>` : ''}
+                                ${todayEntry.water ? `<span class="today-pill">💧 ${todayEntry.water}л</span>` : ''}
+                                ${todayEntry.training ? `<span class="today-pill">💪</span>` : ''}
+                            </div>
+                        </div>
+                        <button class="btn-today-edit" data-profile="${profile}" data-date="${today}">
+                            ✏️ Доповнити дані
+                        </button>
+                    </div>
+                `;
+            } else {
+                todayButtonHTML = `
+                    <div class="today-section">
+                        <div class="today-empty">
+                            <span>📝 Сьогодні ще немає запису</span>
+                        </div>
+                        <button class="btn-today-new" data-profile="${profile}">
+                            ➕ Внести запис
+                        </button>
+                    </div>
+                `;
+            }
+
             card.innerHTML = `
                 <div class="profile-avatar">${initial}</div>
                 <h3 class="profile-name">${profile}</h3>
@@ -120,6 +168,7 @@ const UI = (() => {
                 <button class="btn-record" data-profile="${profile}">
                     Зафіксувати дані
                 </button>
+                ${todayButtonHTML}
             `;
 
             container.appendChild(card);
@@ -185,38 +234,56 @@ const UI = (() => {
     };
 
     /* ─── Render Star Rating ─── */
+    const NUTRITION_LABELS = ['Дуже погано', 'Погано', 'Нормально', 'Добре', 'Відмінно'];
+
     const renderStarRating = (containerId, maxStars = 5) => {
         const container = document.getElementById(containerId);
         if (!container) return;
 
         container.innerHTML = '';
+
+        const starsRow = document.createElement('div');
+        starsRow.className = 'star-rating-row';
+        starsRow.style.display = 'flex';
+        starsRow.style.gap = '2px';
+
         for (let i = 1; i <= maxStars; i++) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'star-btn';
             btn.dataset.value = i;
             btn.textContent = '★';
-            container.appendChild(btn);
+            starsRow.appendChild(btn);
         }
 
+        container.appendChild(starsRow);
+
+        // Rating label
+        const label = document.createElement('div');
+        label.className = 'star-rating-label';
+        label.id = 'nutrition-label';
+        label.style.cssText = 'font-size: 0.75rem; color: var(--label-tertiary); margin-top: 6px; min-height: 1em;';
+        container.appendChild(label);
+
         // Click handler
-        container.querySelectorAll('.star-btn').forEach(btn => {
+        starsRow.querySelectorAll('.star-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const value = parseInt(btn.dataset.value);
-                container.querySelectorAll('.star-btn').forEach((b, idx) => {
+                starsRow.querySelectorAll('.star-btn').forEach((b, idx) => {
                     b.classList.toggle('active', idx < value);
                 });
+                label.textContent = NUTRITION_LABELS[value - 1] || '';
             });
 
             btn.addEventListener('mouseenter', () => {
                 const value = parseInt(btn.dataset.value);
-                container.querySelectorAll('.star-btn').forEach((b, idx) => {
+                starsRow.querySelectorAll('.star-btn').forEach((b, idx) => {
                     b.style.color = idx < value ? 'var(--warning)' : '';
                 });
             });
 
             btn.addEventListener('mouseleave', () => {
-                container.querySelectorAll('.star-btn').forEach(b => {
+                starsRow.querySelectorAll('.star-btn').forEach(b => {
                     b.style.color = '';
                 });
             });
@@ -281,6 +348,129 @@ const UI = (() => {
         calculate();
     };
 
+    /* ─── Setup Steppers ─── */
+    const setupSteppers = () => {
+        document.querySelectorAll('.stepper-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const step = parseFloat(btn.dataset.step) || 1;
+                const input = document.getElementById(targetId);
+                if (!input) return;
+
+                let value = parseFloat(input.value) || 0;
+                const min = parseFloat(input.min) || 0;
+                const max = parseFloat(input.max) || 999;
+
+                if (btn.classList.contains('stepper-plus')) {
+                    value = Math.min(max, Math.round((value + step) * 10) / 10);
+                } else {
+                    value = Math.max(min, Math.round((value - step) * 10) / 10);
+                }
+
+                input.value = value;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
+    };
+
+    /* ─── Setup Water Progress Bar ─── */
+    const setupWaterProgress = () => {
+        const waterInput = document.getElementById('record-water');
+        const progressBar = document.getElementById('water-progress-bar');
+        const progressText = document.getElementById('water-progress-text');
+
+        if (!waterInput || !progressBar || !progressText) return;
+
+        const WATER_GOAL = 2.0; // liters
+
+        const updateProgress = () => {
+            const value = parseFloat(waterInput.value) || 0;
+            const percent = Math.min(100, Math.round((value / WATER_GOAL) * 100));
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = `${value.toFixed(1)} / ${WATER_GOAL} л`;
+
+            if (percent >= 100) {
+                progressBar.style.background = 'linear-gradient(90deg, rgba(48, 209, 88, 0.3), rgba(48, 209, 88, 0.5))';
+                progressText.style.color = 'var(--green)';
+            } else {
+                progressBar.style.background = '';
+                progressText.style.color = '';
+            }
+        };
+
+        waterInput.addEventListener('input', updateProgress);
+        waterInput.addEventListener('change', updateProgress);
+        updateProgress();
+    };
+
+    /* ─── Fill Record Form (for editing) ─── */
+    const fillRecordForm = (entry) => {
+        if (!entry) return;
+
+        // Date
+        const dateInput = document.getElementById('record-date');
+        if (dateInput) dateInput.value = entry.date || '';
+
+        // Weight
+        const weightInput = document.getElementById('record-weight');
+        if (weightInput) weightInput.value = entry.weight || '';
+
+        // Training
+        const trainingToggle = document.getElementById('record-training');
+        const trainingLabel = document.getElementById('training-label');
+        if (trainingToggle) trainingToggle.checked = !!entry.training;
+        if (trainingLabel) {
+            trainingLabel.textContent = entry.training ? 'Так' : 'Ні';
+            trainingLabel.classList.toggle('active', !!entry.training);
+        }
+
+        // Mood
+        if (entry.mood) {
+            document.querySelectorAll('#mood-selector .mood-btn').forEach(btn => {
+                btn.classList.toggle('selected', parseInt(btn.dataset.value) === entry.mood);
+            });
+        }
+
+        // Energy
+        if (entry.energy) {
+            document.querySelectorAll('#energy-selector .energy-btn').forEach(btn => {
+                btn.classList.toggle('selected', parseInt(btn.dataset.value) === entry.energy);
+            });
+        }
+
+        // Sleep
+        const sleepStart = document.getElementById('record-sleep-start');
+        const sleepEnd = document.getElementById('record-sleep-end');
+        if (sleepStart) sleepStart.value = entry.sleepStart || '';
+        if (sleepEnd) sleepEnd.value = entry.sleepEnd || '';
+
+        // Trigger sleep calculation display
+        if (sleepStart && sleepEnd && entry.sleepStart && entry.sleepEnd) {
+            sleepStart.dispatchEvent(new Event('change'));
+        }
+
+        // Water
+        const waterInput = document.getElementById('record-water');
+        if (waterInput) {
+            waterInput.value = entry.water || '';
+            waterInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        // Nutrition (stars)
+        if (entry.nutrition) {
+            const starsRow = document.querySelector('#nutrition-rating .star-rating-row');
+            const nutritionLabel = document.getElementById('nutrition-label');
+            if (starsRow) {
+                starsRow.querySelectorAll('.star-btn').forEach((btn, idx) => {
+                    btn.classList.toggle('active', idx < entry.nutrition);
+                });
+            }
+            if (nutritionLabel && NUTRITION_LABELS[entry.nutrition - 1]) {
+                nutritionLabel.textContent = NUTRITION_LABELS[entry.nutrition - 1];
+            }
+        }
+    };
+
     /* ─── Get Form Data ─── */
     const getRecordFormData = () => {
         const profile = document.getElementById('record-profile')?.value;
@@ -300,7 +490,7 @@ const UI = (() => {
 
         const water = parseFloat(document.getElementById('record-water')?.value) || 0;
 
-        const activeStars = document.querySelectorAll('#nutrition-rating .star-btn.active');
+        const activeStars = document.querySelectorAll('#nutrition-rating .star-rating-row .star-btn.active');
         const nutrition = activeStars.length || 0;
 
         // Validation
@@ -371,7 +561,15 @@ const UI = (() => {
             if (waterInput) waterInput.value = '';
 
             // Reset stars
-            document.querySelectorAll('#nutrition-rating .star-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#nutrition-rating .star-rating-row .star-btn').forEach(b => b.classList.remove('active'));
+            const nutritionLabel = document.getElementById('nutrition-label');
+            if (nutritionLabel) nutritionLabel.textContent = '';
+
+            // Reset water progress
+            const progressBar = document.getElementById('water-progress-bar');
+            const progressText = document.getElementById('water-progress-text');
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressText) progressText.textContent = '0 / 2 л';
         }
     };
 
@@ -457,9 +655,14 @@ const UI = (() => {
                     <td>${entry.water || '—'} л</td>
                     <td>${entry.nutrition ? '★'.repeat(entry.nutrition) : '—'}</td>
                     <td>
-                        <button class="btn-delete-entry" data-profile="${profile}" data-date="${entry.date}" title="Видалити">
-                            ✕
-                        </button>
+                        <div class="history-actions">
+                            <button class="btn-edit-entry" data-profile="${profile}" data-date="${entry.date}" title="Редагувати">
+                                ✏️
+                            </button>
+                            <button class="btn-delete-entry" data-profile="${profile}" data-date="${entry.date}" title="Видалити">
+                                ✕
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -503,8 +706,11 @@ const UI = (() => {
         renderStarRating,
         renderEnergySelector,
         setupSleepCalculation,
+        setupSteppers,
+        setupWaterProgress,
         getRecordFormData,
         resetRecordForm,
+        fillRecordForm,
         renderSummaryStats,
         renderHistoryTable
     };

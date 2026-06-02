@@ -92,9 +92,11 @@ const App = (() => {
         const activeNav = document.getElementById(`nav-${view}`);
         if (activeNav) activeNav.classList.add('active');
 
-        // If navigating to dashboard, initialize it
+        // If navigating to dashboard, initialize it after layout settles
         if (view === 'dashboard') {
-            initDashboard();
+            requestAnimationFrame(() => {
+                initDashboard();
+            });
         }
 
         // If navigating home, refresh cards
@@ -112,6 +114,8 @@ const App = (() => {
         UI.renderStarRating('nutrition-rating');
         UI.renderEnergySelector('energy-selector');
         UI.setupSleepCalculation('record-sleep-start', 'record-sleep-end', 'sleep-duration');
+        UI.setupSteppers();
+        UI.setupWaterProgress();
 
         // Set default date
         const dateInput = document.getElementById('record-date');
@@ -147,10 +151,31 @@ const App = (() => {
                 openRecordModal(profile);
             });
         });
+
+        // "Доповнити дані" — edit today's entry
+        document.querySelectorAll('.btn-today-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const profile = e.currentTarget.dataset.profile;
+                const date = e.currentTarget.dataset.date;
+                openEditRecordModal(profile, date);
+            });
+        });
+
+        // "Внести запис" — new record for today
+        document.querySelectorAll('.btn-today-new').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const profile = e.currentTarget.dataset.profile;
+                openRecordModal(profile);
+            });
+        });
     };
 
     const openRecordModal = (profile = null) => {
         UI.resetRecordForm();
+
+        // Set modal title for new record
+        const titleEl = document.getElementById('record-modal-title');
+        if (titleEl) titleEl.textContent = 'Зафіксувати дані';
 
         // Update profile selector
         UI.renderProfileSelector('record-profile');
@@ -165,10 +190,46 @@ const App = (() => {
         UI.renderStarRating('nutrition-rating');
         UI.renderEnergySelector('energy-selector');
         UI.setupSleepCalculation('record-sleep-start', 'record-sleep-end', 'sleep-duration');
+        UI.setupSteppers();
+        UI.setupWaterProgress();
 
         // Set date to today
         const dateInput = document.getElementById('record-date');
         if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+
+        UI.showModal('modal-record');
+    };
+
+    const openEditRecordModal = (profile, date) => {
+        // Find the entry
+        const entries = Storage.getEntries(profile);
+        const entry = entries.find(e => e.date === date);
+        if (!entry) {
+            UI.showToast('Запис не знайдено', 'error');
+            return;
+        }
+
+        UI.resetRecordForm();
+
+        // Set modal title for editing
+        const titleEl = document.getElementById('record-modal-title');
+        if (titleEl) titleEl.textContent = 'Редагувати запис';
+
+        // Update profile selector and select the right profile
+        UI.renderProfileSelector('record-profile');
+        const select = document.getElementById('record-profile');
+        if (select) select.value = profile;
+
+        // Re-init form components
+        UI.renderMoodSelector('mood-selector');
+        UI.renderStarRating('nutrition-rating');
+        UI.renderEnergySelector('energy-selector');
+        UI.setupSleepCalculation('record-sleep-start', 'record-sleep-end', 'sleep-duration');
+        UI.setupSteppers();
+        UI.setupWaterProgress();
+
+        // Fill form with existing data
+        UI.fillRecordForm(entry);
 
         UI.showModal('modal-record');
     };
@@ -321,18 +382,28 @@ const App = (() => {
 
         // Delete entry handler (delegated)
         document.getElementById('history-section')?.addEventListener('click', (e) => {
-            const btn = e.target.closest('.btn-delete-entry');
-            if (!btn) return;
+            const deleteBtn = e.target.closest('.btn-delete-entry');
+            if (deleteBtn) {
+                const profile = deleteBtn.dataset.profile;
+                const date = deleteBtn.dataset.date;
 
-            const profile = btn.dataset.profile;
-            const date = btn.dataset.date;
+                if (confirm(`Видалити запис за ${date}?`)) {
+                    Storage.deleteEntry(profile, date);
+                    UI.showToast('Запис видалено', 'success');
+                    refreshDashboard();
+                    UI.renderProfileCards();
+                    setupRecordButtons();
+                }
+                return;
+            }
 
-            if (confirm(`Видалити запис за ${date}?`)) {
-                Storage.deleteEntry(profile, date);
-                UI.showToast('Запис видалено', 'success');
-                refreshDashboard();
-                UI.renderProfileCards();
-                setupRecordButtons();
+            // Edit entry handler (delegated)
+            const editBtn = e.target.closest('.btn-edit-entry');
+            if (editBtn) {
+                const profile = editBtn.dataset.profile;
+                const date = editBtn.dataset.date;
+                openEditRecordModal(profile, date);
+                return;
             }
         });
     };
@@ -405,6 +476,7 @@ const App = (() => {
         init,
         navigateTo,
         openRecordModal,
+        openEditRecordModal,
     };
 })();
 
