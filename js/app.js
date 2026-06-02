@@ -29,6 +29,7 @@ const App = (() => {
         setupRecordModal();
         setupProfileModal();
         setupImportExport();
+        setupReminders();
 
         // Setup dashboard
         setupDashboard();
@@ -468,6 +469,82 @@ const App = (() => {
             UI.renderSummaryStats(entries);
             Charts.renderAllCharts(entries);
             UI.renderHistoryTable(currentDashboardProfile, entries);
+        }
+    };
+
+    /* ─── Reminders Setup ─── */
+    const setupReminders = () => {
+        const btnReminders = document.getElementById('btn-reminders');
+        const reminderToggle = document.getElementById('reminder-enabled');
+        const reminderStatus = document.getElementById('reminder-status');
+        const reminderTime = document.getElementById('reminder-time');
+        const btnSave = document.getElementById('btn-save-reminders');
+        const btnTest = document.getElementById('btn-test-notification');
+
+        if (!btnReminders) return;
+
+        // Open modal
+        btnReminders.addEventListener('click', () => {
+            const settings = window.MyBodyReminders.getSettings();
+            if (reminderToggle) reminderToggle.checked = settings.enabled;
+            if (reminderTime) reminderTime.value = settings.time || '21:00';
+            if (reminderStatus) {
+                reminderStatus.textContent = settings.enabled ? 'Увімкнено' : 'Вимкнено';
+                reminderStatus.classList.toggle('active', settings.enabled);
+            }
+            UI.showModal('modal-reminders');
+        });
+
+        // Toggle label
+        if (reminderToggle && reminderStatus) {
+            reminderToggle.addEventListener('change', () => {
+                reminderStatus.textContent = reminderToggle.checked ? 'Увімкнено' : 'Вимкнено';
+                reminderStatus.classList.toggle('active', reminderToggle.checked);
+            });
+        }
+
+        // Save
+        if (btnSave) {
+            btnSave.addEventListener('click', async () => {
+                const enabled = reminderToggle?.checked || false;
+                const time = reminderTime?.value || '21:00';
+
+                if (enabled) {
+                    const granted = await window.MyBodyReminders.requestPermission();
+                    if (!granted) {
+                        UI.showToast('Дозвіл на сповіщення не надано', 'error');
+                        return;
+                    }
+                }
+
+                window.MyBodyReminders.saveSettings({
+                    enabled,
+                    time,
+                    lastShown: window.MyBodyReminders.getSettings().lastShown
+                });
+
+                // Re-schedule
+                window.MyBodyReminders.scheduleCheck();
+
+                UI.hideModal('modal-reminders');
+                UI.showToast(
+                    enabled ? `🔔 Нагадування о ${time}` : '🔕 Нагадування вимкнено',
+                    'success'
+                );
+            });
+        }
+
+        // Test notification
+        if (btnTest) {
+            btnTest.addEventListener('click', async () => {
+                const granted = await window.MyBodyReminders.requestPermission();
+                if (granted) {
+                    window.MyBodyReminders.showReminder();
+                    UI.showToast('📤 Тестове сповіщення надіслано', 'success');
+                } else {
+                    UI.showToast('Дозвіл на сповіщення не надано', 'error');
+                }
+            });
         }
     };
 

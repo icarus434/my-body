@@ -1,0 +1,19 @@
+{
+    "name": "My Body — Health Tracker",
+    "short_name": "My Body",
+    "description": "Трекер здоров'я: вага, сон, вода, настрій, харчування",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#1c1c1e",
+    "orientation": "portrait-primary",
+    "categories": ["health", "fitness", "lifestyle"],
+    "icons": [
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
