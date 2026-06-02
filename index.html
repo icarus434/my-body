@@ -2,10 +2,17 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="My Body — персональний трекер здоров'я. Відстежуйте вагу, настрій, сон, тренування та харчування.">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#1c1c1e">
     <title>My Body — Трекер здоров'я</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-512.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="My Body">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +26,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body>
 
@@ -45,6 +52,9 @@
                 <span>Імпорт</span>
             </button>
             <input type="file" id="file-import" accept=".json">
+            <button class="action-btn" id="btn-reminders" title="Нагадування">
+                <span class="icon">🔔</span>
+            </button>
         </div>
     </header>
 
@@ -134,7 +144,7 @@
     <div class="modal-overlay"></div>
     <div class="modal-content">
         <div class="modal-header">
-            <h2 class="modal-title">Зафіксувати дані</h2>
+            <h2 class="modal-title" id="record-modal-title">Зафіксувати дані</h2>
             <button class="modal-close">✕</button>
         </div>
         <div class="modal-body" id="record-form">
@@ -148,8 +158,12 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Вага (кг)</label>
-                <input type="number" class="form-input" id="record-weight"
-                       placeholder="Наприклад: 75.5" step="0.1" min="20" max="300">
+                <div class="stepper-control" id="weight-stepper">
+                    <button type="button" class="stepper-btn stepper-minus" data-target="record-weight" data-step="0.1">−</button>
+                    <input type="number" class="stepper-input" id="record-weight"
+                           placeholder="75.5" step="0.1" min="20" max="300" inputmode="decimal">
+                    <button type="button" class="stepper-btn stepper-plus" data-target="record-weight" data-step="0.1">+</button>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Тренування</label>
@@ -173,22 +187,31 @@
                 <label class="form-label">Час сну</label>
                 <div class="form-row">
                     <div>
-                        <label class="form-label" style="font-size: 0.7rem; opacity: 0.5;">Ліг спати</label>
+                        <label class="form-label form-label-hint">🌙 Ліг спати</label>
                         <input type="time" class="form-input" id="record-sleep-start">
                     </div>
                     <div>
-                        <label class="form-label" style="font-size: 0.7rem; opacity: 0.5;">Прокинувся</label>
+                        <label class="form-label form-label-hint">☀️ Прокинувся</label>
                         <input type="time" class="form-input" id="record-sleep-end">
                     </div>
                 </div>
                 <div class="sleep-duration-display" id="sleep-duration" style="margin-top: 10px;">
                     <span class="sleep-duration-label">Вкажіть час сну</span>
                 </div>
+                <div class="form-hint">💡 Рекомендація: 7–9 годин сну на добу</div>
             </div>
             <div class="form-group">
                 <label class="form-label">Спожито води (літрів)</label>
-                <input type="number" class="form-input" id="record-water"
-                       placeholder="Наприклад: 2.0" step="0.1" min="0" max="10">
+                <div class="stepper-control" id="water-stepper">
+                    <button type="button" class="stepper-btn stepper-minus" data-target="record-water" data-step="0.1">−</button>
+                    <input type="number" class="stepper-input" id="record-water"
+                           placeholder="2.0" step="0.1" min="0" max="10" inputmode="decimal">
+                    <button type="button" class="stepper-btn stepper-plus" data-target="record-water" data-step="0.1">+</button>
+                </div>
+                <div class="water-progress" id="water-progress">
+                    <div class="water-progress-bar" id="water-progress-bar"></div>
+                    <span class="water-progress-text" id="water-progress-text">0 / 2 л</span>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Якість харчування</label>
@@ -224,11 +247,149 @@
     </div>
 </div>
 
+<!-- Reminder Settings Modal -->
+<div class="modal" id="modal-reminders">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-content-sm">
+        <div class="modal-header">
+            <h2 class="modal-title">🔔 Нагадування</h2>
+            <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Щоденне нагадування</label>
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reminder-enabled">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label" id="reminder-status">Вимкнено</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Час нагадування</label>
+                <input type="time" class="form-input" id="reminder-time" value="21:00">
+                <div class="form-hint">💡 Сповіщення прийде у вказаний час, якщо додаток відкритий</div>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary btn-full" id="btn-test-notification">
+                    📤 Тестове сповіщення
+                </button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary btn-full" id="btn-save-reminders">Зберегти</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast-container" id="toast-container"></div>
 
-<script src="js/storage.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/charts.js"></script>
-<script src="js/app.js"></script>
+<script src="js/storage.js?v=7"></script>
+<script src="js/ui.js?v=7"></script>
+<script src="js/charts.js?v=7"></script>
+<script src="js/app.js?v=7"></script>
+
+<!-- PWA Service Worker Registration + Reminders -->
+<script>
+(function() {
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+                .catch(err => console.warn('SW registration failed:', err));
+        });
+    }
+
+    // ─── Notification Reminders ───
+    const REMINDER_KEY = 'my-body-reminder-settings';
+
+    window.MyBodyReminders = {
+        getSettings() {
+            try {
+                return JSON.parse(localStorage.getItem(REMINDER_KEY)) || {
+                    enabled: false,
+                    time: '21:00',
+                    lastShown: null
+                };
+            } catch { return { enabled: false, time: '21:00', lastShown: null }; }
+        },
+
+        saveSettings(settings) {
+            localStorage.setItem(REMINDER_KEY, JSON.stringify(settings));
+        },
+
+        async requestPermission() {
+            if (!('Notification' in window)) {
+                alert('Ваш браузер не підтримує сповіщення');
+                return false;
+            }
+            const permission = await Notification.requestPermission();
+            return permission === 'granted';
+        },
+
+        scheduleCheck() {
+            const settings = this.getSettings();
+            if (!settings.enabled) return;
+
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10);
+            const [hours, minutes] = settings.time.split(':').map(Number);
+
+            // Already shown today?
+            if (settings.lastShown === today) return;
+
+            const reminderTime = new Date();
+            reminderTime.setHours(hours, minutes, 0, 0);
+
+            if (now >= reminderTime) {
+                // Time has passed today — show now
+                this.showReminder();
+                settings.lastShown = today;
+                this.saveSettings(settings);
+            } else {
+                // Schedule for later today
+                const delay = reminderTime.getTime() - now.getTime();
+                setTimeout(() => {
+                    this.showReminder();
+                    const s = this.getSettings();
+                    s.lastShown = today;
+                    this.saveSettings(s);
+                }, delay);
+            }
+        },
+
+        showReminder() {
+            if (Notification.permission !== 'granted') return;
+
+            // Try Service Worker notification first (works in background)
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SCHEDULE_REMINDER',
+                    title: '🏋️ My Body — Нагадування',
+                    body: 'Час внести дані за сьогодні! 💪',
+                    delay: 0
+                });
+            } else {
+                // Fallback: basic notification
+                new Notification('🏋️ My Body — Нагадування', {
+                    body: 'Час внести дані за сьогодні! 💪',
+                    icon: 'icons/icon-512.png'
+                });
+            }
+        },
+
+        init() {
+            this.scheduleCheck();
+            // Re-check every 5 minutes
+            setInterval(() => this.scheduleCheck(), 5 * 60 * 1000);
+        }
+    };
+
+    // Auto-start reminders
+    window.MyBodyReminders.init();
+})();
+</script>
 </body>
 </html>
